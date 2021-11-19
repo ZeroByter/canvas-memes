@@ -10,7 +10,7 @@ function generateMemes(data) {
     for (const meme of data) {
         container.insertAdjacentHTML("beforeend", cleanHTMLTemplate(`
             <div class="meme-container">
-                <a href="/${meme.url || meme.name}.html">
+                <a href="./${meme.url || meme.name}.html">
                     <div class="meme-name">${meme.name}</div>
                     <div class="meme-desc">${meme.desc}</div>
                 </a>
