@@ -9,9 +9,9 @@ function repeatString(str, times) {
 }
 
 function getUrlPrefix(){
-    const pathNameParts = window.location.pathname.split("/").length - 2
+    const pathNameParts = window.location.pathname.split("/").length - 3
 
-    if(pathNameParts == 1){
+    if(pathNameParts <= 1){
         return "./"
     }else{
         return repeatString("../", pathNameParts)
