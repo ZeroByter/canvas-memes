@@ -8,8 +8,18 @@ function repeatString(str, times) {
     return result
 }
 
+function getUrlPrefix(){
+    const pathNameParts = window.location.pathname.split("/").length - 2
+
+    if(pathNameParts == 1){
+        return "./"
+    }else{
+        return repeatString("../", pathNameParts)
+    }
+}
+
 //repeat string is used here in case we want to include this css somewhere not in root
-document.body.insertAdjacentHTML("afterbegin", `<link rel="stylesheet" href="${repeatString("../", window.location.pathname.split("/").length - 2)}meme-template.css">`)
+document.body.insertAdjacentHTML("afterbegin", `<link rel="stylesheet" href="${getUrlPrefix()}meme-template.css">`)
 
 document.body.insertAdjacentHTML("beforeend", `<a href=".."><button class="go-back">go back</button></a>`)
 
