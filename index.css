@@ -1,0 +1,81 @@
+body {
+    font-family: "Arial";
+    background: rgb(44, 44, 44);
+    color: rgb(209, 209, 209);
+}
+
+a {
+    color: rgb(121, 121, 211);
+}
+
+.fork-me {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+
+.header {
+    margin-top: 80px;
+    text-align: center;
+}
+
+.welcome {
+    font-size: 24px;
+}
+.welcome-to {
+    font-size: 20px;
+    font-weight: bold;
+}
+.about {
+    font-size: 18px;
+    width: 600px;
+    margin: 0px auto;
+    margin-top: 40px;
+}
+.warning {
+    color: rgb(255, 103, 103);
+}
+
+.memes-container {
+    width: 70%;
+    margin: 0px auto;
+    display: flex;
+    flex-wrap: wrap;
+}
+@media screen and (max-width: 800px) {
+    .memes-container {
+        width: calc(100% - 60px);
+    }
+}
+
+.meme-container {
+    width: calc(100% / 3 - 12px);
+    border: 1px solid rgb(224, 224, 224);
+    box-sizing: border-box;
+    margin: 6px;
+    padding: 6px;
+}
+.meme-container:hover {
+    background: rgba(255, 255, 255, 0.01);
+}
+.meme-container:active {
+    background: rgba(255, 255, 255, 0.02);
+}
+.meme-container > a {
+    color: rgb(209, 209, 209);
+    text-decoration: none;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+.meme-container > a:visited {
+    color: rgb(214, 208, 230);
+}
+.meme-container > a > .meme-name {
+    font-size: 1.3rem;
+}
+.meme-container > a > .meme-desc {
+    margin: 4px 0px;
+}

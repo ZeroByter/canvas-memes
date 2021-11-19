@@ -1,0 +1,102 @@
+<body>
+    <title>lotta explodey</title>
+
+    <style>
+        #canvas {
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import vector2 from "./vector2.js"
+        import { getRandomNear, ilerp } from "./math.js"
+        import "./meme-template.js"
+
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        let location = new vector2(canvas.width / 2, canvas.height / 2)
+        let divide = 8
+        let offset = 0
+
+        window.addEventListener("mousemove", e => {
+            location.x = e.pageX
+            location.y = e.pageY
+
+            offset = -e.pageX - e.pageY
+            // divide = Math.max(1, e.pageY) / canvas.height * 10
+        })
+
+        function think(timeDelta) {
+
+        }
+
+        ctx.fillStyle = "black"
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+        function render() {
+            for (let i = 0; i < canvas.width / divide; i++) {
+                ctx.strokeStyle = `hsl(${i * divide / canvas.width * 90 + offset}deg 100% 50%)`
+
+                ctx.beginPath();
+                ctx.moveTo(i * divide, 0);
+                // ctx.lineTo(canvas.width / 2, canvas.height);
+                ctx.lineTo(location.x, location.y);
+                ctx.stroke();
+                
+                ctx.strokeStyle = `hsl(${(canvas.width - i * divide) / canvas.width * 90 - 180 + offset}deg 100% 50%)`
+
+                ctx.beginPath();
+                ctx.moveTo(i * divide, canvas.height);
+                // ctx.lineTo(canvas.width / 2, canvas.height);
+                ctx.lineTo(location.x, location.y);
+                ctx.stroke();
+            }
+
+            for (let i = 0; i < canvas.height / divide; i++) {
+                ctx.strokeStyle = `hsl(${i * divide / canvas.height * 90 + 90 + offset}deg 100% 50%)`
+
+                ctx.beginPath();
+                ctx.moveTo(canvas.width, i * divide);
+                // ctx.lineTo(canvas.width / 2, canvas.height);
+                ctx.lineTo(location.x, location.y);
+                ctx.stroke();
+                
+                ctx.strokeStyle = `hsl(${(canvas.height - i * divide) / canvas.height * 90 - 90 + offset}deg 100% 50%)`
+
+                ctx.beginPath();
+                ctx.moveTo(0, i * divide);
+                // ctx.lineTo(canvas.width / 2, canvas.height);
+                ctx.lineTo(location.x, location.y);
+                ctx.stroke();
+            }
+
+            /*ctx.strokeStyle = "white"
+            ctx.beginPath();
+            ctx.arc(location.x, location.y, 151, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(location.x, location.y, 49, 0, 2 * Math.PI);
+            ctx.stroke();*/
+        }
+
+        function gameLoop() {
+            think(1)
+
+            render()
+
+            window.requestAnimationFrame(gameLoop)
+        }
+
+        window.requestAnimationFrame(gameLoop)
+    </script>
+</body>

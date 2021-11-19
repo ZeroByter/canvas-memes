@@ -1,0 +1,284 @@
+<body>
+    <style>
+        body {
+            margin: 0px;
+        }
+    </style>
+
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import vector2 from "./vector2.js"
+        import "./meme-template.js"
+
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        const sources = [{
+            location: new vector2(canvas.width / 2 - 50, canvas.height - 100),
+            assignedBots: [],
+        }]
+        const targets = [{
+            location: new vector2(canvas.width / 2, 100),
+            itemsDelivered: 0,
+        }]
+        const homes = [{
+            location: new vector2(canvas.width / 2 + 50, canvas.height - 100),
+            bots: 2,
+        }]
+        const bots = []
+        const botTargets = {}
+
+        window.botTargets = botTargets
+
+        let botSpeed = 2.5
+
+        let currentTool = 1
+
+        const getClosest = (list, check) => {
+            let closestItem = null
+            let closestItemDistance = 0
+
+            list.forEach(item => {
+                if (closestItem == null || item.location.distance(check) < closestItemDistance) {
+                    closestItem = item
+                    closestItemDistance = item.location.distance(check)
+                }
+            });
+
+            return closestItem
+        }
+
+        const getBestSource = botLocation => {
+            let chosenSource = null
+            let sourceScore = 0
+
+            const botsToEachSource = {}
+            
+            Object.entries(botTargets).forEach(entry => {
+                const botIndex = entry[0]
+                const target = entry[1]
+                const targetIndex = sources.indexOf(target)
+
+                if(targetIndex == -1) return
+
+                if(botsToEachSource[targetIndex] == null){
+                    botsToEachSource[targetIndex] = 0
+                }
+
+                botsToEachSource[targetIndex]++
+            })
+
+            sources.sort((a, b) => {
+                return a.location.distance(botLocation) - b.location.distance(botLocation)
+            }).forEach((source, index) => {
+                let score = botsToEachSource[index]
+                if(score == null) score = 0
+
+                if (chosenSource == null || score < sourceScore) {
+                    chosenSource = source
+                    sourceScore = score
+                }
+            })
+
+            return chosenSource
+        }
+
+        document.addEventListener("keydown", e => {
+            if (e.code.startsWith("Digit")) {
+                currentTool = parseInt(e.key)
+            }
+        })
+
+        canvas.addEventListener("mousedown", e => {
+            const click = new vector2(e.pageX, e.pageY)
+
+            if (e.button == 0) {
+                if (currentTool == 1) {
+                    homes.push({
+                        location: click.copy(),
+                        bots: 2
+                    })
+                } else if (currentTool == 2) {
+                    sources.push({
+                        location: click.copy(),
+                        assignedBots: []
+                    })
+                } else {
+                    targets.push({
+                        location: click.copy(),
+                        itemsDelivered: 0
+                    })
+                }
+            } else if (e.button == 2) {
+                sources.forEach((source, index) => {
+                    if (source.location.distance(click) < 10) {
+                        sources.splice(index, 1)
+                    }
+                })
+
+                targets.forEach((target, index) => {
+                    if (target.location.distance(click) < 10) {
+                        targets.splice(index, 1)
+                    }
+                })
+
+                homes.forEach((home, index) => {
+                    if (home.location.distance(click) < 10) {
+                        homes.splice(index, 1)
+                    }
+                })
+            }
+        })
+
+        canvas.addEventListener("contextmenu", e => {
+            e.preventDefault()
+        })
+
+        //physics loop
+        setInterval(() => {
+            homes.forEach(home => {
+                if (home.bots > 0) {
+                    home.bots--
+                    bots.push({
+                        location: home.location.copy(),
+                        target: null,
+                        carryingItem: false,
+                    })
+                }
+            })
+
+            bots.forEach((bot, index) => {
+                if (bot.target != null) {
+                    let direction = bot.target.location.minus(bot.location).normalized()
+
+                    bot.location = bot.location.add(direction.multiply(botSpeed))
+
+                    if (bot.location.distance(bot.target.location) < 10) {
+                        if (bot.carryingItem) {
+                            bot.carryingItem = false
+                        } else {
+                            bot.carryingItem = true
+                        }
+
+                        bot.target = null
+                    }
+                } else {
+                    if (bot.carryingItem) {
+                        let closestTarget = getClosest(targets, bot.location)
+
+                        if (closestTarget) {
+                            bot.target = closestTarget
+                            botTargets[index] = bot.target
+                        }
+                    } else {
+                        let closestSource = getBestSource(bot.location)
+
+                        if (closestSource) {
+                            bot.target = closestSource
+                            botTargets[index] = bot.target
+                        }
+                    }
+                }
+
+                // if (bot.target == null) {
+                //     if (bot.carryingItem) {
+                //         let closestTarget = getClosest(targets, bot.location)
+
+                //         if (closestTarget) {
+                //             bot.target = closestTarget
+
+                //             if (bot.location.distance(closestTarget.location) < 5) {
+                //                 bot.carryingItem = false
+                //                 bot.target = null
+                //             }
+                //         }
+                //     } else {
+                //         let closestSource = getBestSource(bot.location)
+
+                //         if (closestSource) {
+                //             bot.target = closestSource
+                //             if (!closestSource.assignedBots.includes(index)) closestSource.assignedBots.push(index)
+
+                //             // let direction = closestSource.location.minus(bot.location).normalized()
+
+                //             // bot.location = bot.location.add(direction.multiply(botSpeed))
+                //         }
+                //     }
+                // }
+
+                // if (bot.target) {
+                //     let direction = bot.target.location.minus(bot.location).normalized()
+
+                //     bot.location = bot.location.add(direction.multiply(botSpeed))
+
+                //     if (bot.carryingItem) {
+                //         let closestTarget = getClosest(targets, bot.location)
+
+                //         if (closestTarget) {
+                //             bot.target = closestTarget
+
+                //             if (bot.location.distance(closestTarget.location) < 5) {
+                //                 bot.carryingItem = false
+                //                 bot.target = null
+                //             }
+                //         }
+                //     } else {
+                //         if (bot.location.distance(bot.target.location) < 5) {
+                //             bot.target.assignedBots.splice(index, 1)
+
+                //             bot.carryingItem = true
+                //             bot.target = null
+                //         }
+                //     }
+                // }
+            })
+        }, 10)
+
+        //rendering loop
+        setInterval(() => {
+            ctx.fillStyle = "black"
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+            ctx.fillStyle = "green"
+            sources.forEach(source => {
+                ctx.fillRect(source.location.x - 10, source.location.y - 10, 20, 20)
+            })
+
+            ctx.fillStyle = "red"
+            targets.forEach(target => {
+                ctx.fillRect(target.location.x - 10, target.location.y - 10, 20, 20)
+            })
+
+            ctx.fillStyle = "blue"
+            homes.forEach(home => {
+                ctx.fillRect(home.location.x - 10, home.location.y - 10, 20, 20)
+            })
+
+            ctx.strokeStyle = "white"
+            ctx.lineWidth = 0.75
+            bots.forEach(bot => {
+                ctx.beginPath()
+                ctx.rect(bot.location.x - 5, bot.location.y - 5, 10, 10)
+                ctx.stroke()
+            })
+
+            ctx.fillStyle = "white"
+            ctx.font = "22px arial"
+
+            let currentToolText = "none"
+            if (currentTool == 1) {
+                currentToolText = "home"
+            } else if (currentTool == 2) {
+                currentToolText = "source"
+            } else {
+                currentToolText = "target"
+            }
+
+            ctx.fillText(`current tool: ${currentToolText}`, 10, 26)
+        }, 5)
+    </script>
+</body>

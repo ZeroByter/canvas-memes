@@ -1,0 +1,73 @@
+<body>
+    <meta charset="UTF-8">
+    <style>
+        #input-chars,
+        #length {
+            width: 100%;
+        }
+
+        #output {
+            background: darkgray;
+            width: fit-content;
+            border: 2px solid red;
+            border-radius: 6px;
+            padding: 10px;
+        }
+    </style>
+
+    <div>
+        <input id="input-chars" />
+    </div>
+    <div>
+        <input id="length" type="number" />
+    </div>
+    <div id="output">
+
+    </div>
+
+    <script>
+        let chars = [
+            "❤️",
+            "💕",
+            "😘",
+            "💓",
+            "🥰",
+            "😍",
+            "💗",
+            "💞",
+            "🥰",
+            "💝",
+        ]
+
+        let length = 14;
+
+        let inputChars = document.getElementById("input-chars")
+        inputChars.value = chars.join("")
+
+        let inputLength = document.getElementById("length")
+        inputLength.value = length
+
+        let output = document.getElementById("output")
+
+        function generateString() {
+            let outputString = ""
+
+            for (let i = 0; i < length; i++) {
+                outputString += chars[Math.floor(Math.random() * chars.length)]
+            }
+
+            output.innerHTML = outputString
+        }
+
+        generateString()
+        inputLength.addEventListener("change", e => {
+            length = e.target.value
+            generateString()
+        })
+
+        inputChars.addEventListener("change", e => {
+            chars = e.target.value.split(" ")
+            generateString()
+        })
+    </script>
+</body>

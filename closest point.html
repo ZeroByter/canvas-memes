@@ -1,0 +1,84 @@
+<body>
+    <title>lotta explodey</title>
+
+    <style>
+        #canvas {
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import vector2 from "./vector2.js"
+        import "./meme-template.js"
+
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        let dots = []
+        let mousePosition = new vector2(-1, -1)
+
+        canvas.addEventListener("mousedown", e => {
+            /*if(newThingyStart == null){
+                newThingyStart = new vector2(e.pageX, e.pageY)
+            }else if(newThingyEnd == null){
+                newThingyEnd = new vector2(e.pageX, e.pageY)
+
+                createNewThing(newThingyStart, newThingyEnd)
+
+                newThingyStart = null
+                newThingyEnd = null
+            }*/
+
+            dots.push(new vector2(e.pageX, e.pageY))
+        })
+
+        canvas.addEventListener("mousemove", e => {
+            mousePosition = new vector2(e.pageX, e.pageY)
+        })
+
+        function think(timeDelta) {
+
+        }
+
+        function render() {
+            ctx.fillStyle = "black"
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+            let closestDistance = 99999999
+
+            ctx.fillStyle = "purple"
+            for (let dot of dots) {
+                ctx.beginPath();
+                ctx.arc(dot.x, dot.y, 5, 0, 2 * Math.PI);
+                ctx.fill();
+
+                const distance = dot.distance(mousePosition)
+                if(distance < closestDistance) closestDistance = distance
+            }
+
+            ctx.strokeStyle = "white"
+            ctx.beginPath();
+            ctx.arc(mousePosition.x, mousePosition.y, closestDistance == 99999999 ? Math.random() * 100 + 10 : closestDistance, 0, 2 * Math.PI);
+            ctx.stroke();
+        }
+
+        function gameLoop() {
+            think(1)
+
+            render()
+
+            window.requestAnimationFrame(gameLoop)
+        }
+
+        window.requestAnimationFrame(gameLoop)
+    </script>
+</body>

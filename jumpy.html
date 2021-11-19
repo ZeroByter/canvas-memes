@@ -1,0 +1,126 @@
+<body>
+    <title>lotta explodey</title>
+
+    <style>
+        #canvas {
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import vector2 from "./vector2.js"
+        import { ilerp, lerp } from "./math.js"
+        import "./meme-template.js"
+
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        let newThingyStart = null
+        let newThingyEnd = null
+
+        let thingies = []
+        let paths = []
+        let thingsCreated = 0
+
+        function createNewThing(start, end, pathIndex = -1){
+            thingsCreated++
+
+            thingies.push({
+                pathIndex,
+                location: start,
+                start,
+                end,
+                size: 15,
+                distanceFromStart: 0,
+                distanceBetween: start.distance(end),
+                jumpDirection: start.x > end.x ? -90 : 90,
+            })
+        }
+
+        function rotateDirection(direction, degrees){
+            let angle = direction.toAngle()
+
+            angle += degrees
+
+            return vector2.fromAngle(angle)
+        }
+
+        canvas.addEventListener("mousedown", e => {
+            /*if(newThingyStart == null){
+                newThingyStart = new vector2(e.pageX, e.pageY)
+            }else if(newThingyEnd == null){
+                newThingyEnd = new vector2(e.pageX, e.pageY)
+
+                createNewThing(newThingyStart, newThingyEnd)
+
+                newThingyStart = null
+                newThingyEnd = null
+            }*/
+
+            paths.push(new vector2(e.pageX, e.pageY))
+        })
+
+        function think(timeDelta) {
+            //if(thingsCreated == 0 || thingsCreated > 2){
+            if(thingies.length == 0){
+                for(let i = 0; i < paths.length - 1; i++){
+                    createNewThing(paths[i], paths[i + 1], i)
+                    break;
+                }
+            }
+
+            thingies.forEach((thing, index) => {
+                let direction = thing.end.minus(thing.start).normalized()
+
+                thing.distanceFromStart += 3
+
+                let jump = ilerp(0, thing.distanceBetween, thing.distanceFromStart) * Math.PI
+                jump = Math.sin(jump) * 1.5
+
+                //thing.location = thing.start.add(direction.multiply(thing.distanceFromStart)).add(rotateDirection(direction, thing.jumpDirection).multiply(jump * 100))
+                thing.location = thing.start.add(direction.multiply(thing.distanceFromStart)).add(new vector2(0, jump * -100))
+
+                if(thing.distanceFromStart >= thing.distanceBetween){
+                    thingies.splice(index, 1)
+
+                    if(thing.pathIndex < paths.length - 2){
+                        createNewThing(paths[thing.pathIndex + 1], paths[thing.pathIndex + 2], thing.pathIndex + 1)
+                    }else{
+                        createNewThing(paths[thing.pathIndex + 1], paths[0], -1)
+                    }
+                }
+            })
+        }
+
+        function render() {
+            ctx.fillStyle = "black"
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+            ctx.fillStyle = "red"
+            thingies.forEach(thing => {
+                const thingSize = thing.size
+
+                ctx.fillRect(thing.location.x - thingSize / 2, thing.location.y - thingSize / 2, thingSize, thingSize)
+            })
+        }
+
+        function gameLoop() {
+            think(1)
+
+            render()
+
+            window.requestAnimationFrame(gameLoop)
+        }
+
+        window.requestAnimationFrame(gameLoop)
+    </script>
+</body>

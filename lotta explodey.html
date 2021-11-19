@@ -1,0 +1,91 @@
+<body>
+    <title>lotta explodey</title>
+
+    <style>
+        #canvas {
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import vector2 from "./vector2.js"
+        import "./meme-template.js"
+
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        let thingies = []
+
+        function createNewThing(location, velocity, newSize){
+            thingies.push({
+                location,
+                velocity,
+                size: newSize,
+            })
+        }
+
+        canvas.addEventListener("mousedown", e => {
+            let location
+            if(thingies.length == 0){
+                location = new vector2(canvas.width / 2, canvas.height / 2)
+            }else{
+                let lastThing = thingies[0]
+
+                location = lastThing.location
+            }
+
+            createNewThing(location, new vector2(e.pageX, e.pageY).minus(location).normalized().multiply(15), 30)
+        })
+
+        function think(timeDelta) {
+            thingies.forEach((thing, index) => {
+                thing.location = thing.location.add(thing.velocity)
+                thing.velocity = thing.velocity.multiply(0.93)
+
+                if(thing.location.x < 0) thing.location.x = 0
+                if(thing.location.x > canvas.width) thing.location.x = canvas.width
+                if(thing.location.y < 0) thing.location.y = 0
+                if(thing.location.y > canvas.height) thing.location.y = canvas.height
+
+                if(thing.velocity.magnitude() < 1){
+                    if(thing.size > 5){
+                        createNewThing(thing.location, thing.velocity.normalized().multiply(15), thing.size - 4)
+                    }
+
+                    thingies.splice(index, 1)
+                }
+            })
+        }
+
+        function render() {
+            ctx.fillStyle = "black"
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+            ctx.fillStyle = "red"
+            thingies.forEach(thing => {
+                const thingSize = thing.size
+
+                ctx.fillRect(thing.location.x - thingSize / 2, thing.location.y - thingSize / 2, thingSize, thingSize)
+            })
+        }
+
+        function gameLoop() {
+            think(1)
+
+            render()
+
+            window.requestAnimationFrame(gameLoop)
+        }
+
+        window.requestAnimationFrame(gameLoop)
+    </script>
+</body>

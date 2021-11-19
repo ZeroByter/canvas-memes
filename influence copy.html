@@ -1,0 +1,63 @@
+<body>
+    <style>
+        body {
+            margin: 0px;
+        }
+    </style>
+
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import vector2 from "./vector2.js"
+        import "./meme-template.js"
+
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        canvas.addEventListener("contextmenu", e => {
+            e.preventDefault()
+        })
+
+        const width = 7
+        const height = 7
+
+        const map = []
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                map[x + y * width] = {
+                    size: 10
+                }
+            }
+        }
+
+        //physics loop
+        setInterval(() => {
+
+        }, 10)
+
+        //rendering loop
+        setInterval(() => {
+            ctx.fillStyle = "black"
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+            ctx.strokeStyle = "white"
+            map.forEach((island, index) => {
+                let x = index % width
+                let y = Math.floor(index / width)
+
+                let unevenOffset = 0
+                if (y % 2 == 0) {
+                    unevenOffset = 40
+                }
+
+                ctx.beginPath()
+                ctx.arc(x * 80 + 75 + unevenOffset, y * 80 + 75, 30, 0, 2 * Math.PI)
+                ctx.stroke()
+            })
+        }, 5)
+    </script>
+</body>

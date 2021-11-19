@@ -1,0 +1,71 @@
+<body>
+    <title>lotta explodey</title>
+
+    <style>
+        #canvas {
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import vector2 from "./vector2.js"
+        import { getRandomNear } from "./math.js"
+        import "./meme-template.js"
+
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        let location = new vector2(canvas.width / 2, canvas.height / 2)
+        let angle = 90
+        let width = 50
+
+        function think(timeDelta) {
+            angle += getRandomNear(2, 4)
+            width = Math.max(50, width + getRandomNear(0, 10))
+            location = location.add(getRandomNear(0, 40), getRandomNear(0, 40))
+            if(location.x < 0) location.x = 0
+            if(location.x > canvas.width) location.x = canvas.width
+            if(location.y < 0) location.y = 0
+            if(location.y > canvas.height) location.y = canvas.height
+        }
+
+        ctx.fillStyle = "black"
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+        function render() {
+            let closestDistance = 99999999
+
+            // ctx.strokeStyle = "hsl(" + (Math.random() * 360) + "deg 100% 50%)"
+            ctx.strokeStyle = "hsl(" + angle + "deg 100% 50%)"
+            ctx.lineWidth = 10
+
+            const direction = vector2.fromAngle(angle)
+            const p1 = location.minus(direction.multiply(width))
+            const p2 = location.add(direction.multiply(width))
+
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+
+        function gameLoop() {
+            think(1)
+
+            render()
+
+            window.requestAnimationFrame(gameLoop)
+        }
+
+        window.requestAnimationFrame(gameLoop)
+    </script>
+</body>

@@ -1,0 +1,128 @@
+<body>
+    <title>meme</title>
+
+    <style>
+        #canvas {
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <canvas id="canvas"></canvas>
+
+    <script src="gamepad.js"></script>
+    <script type="module">
+        import "./meme-template.js"
+        
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        const gridSize = canvas.width / 100
+
+        const randomColor = (intensity = 35) => {
+            return `hsl(${Math.random() * 360}deg 50% ${intensity}%)`
+        }
+
+        const lerp = (a, b, t) => {
+            return a + (b - a) * t
+        }
+
+        const ilerp = (a, b, t) => {
+            if (a != b) {
+                return (t - a) / (b - a)
+            } else {
+                return 0
+            }
+        }
+
+        /*
+            let gamepad = {}
+        
+            window.addEventListener("gamepadconnected", e => {
+                gamepad = e.gamepad
+            })
+            window.addEventListener("x-gamepad:change", e => {
+                const detail = e.detail
+                const type = detail.type
+        
+                if(type === "axis"){
+                    gamepad.axes[detail.index] = detail.value
+                }
+        
+                console.log(gamepad.axes[4])
+            })
+        */
+
+        const doLines = () => {
+            ctx.strokeStyle = "black"
+            for (let i = 0; i < 100; i++) {
+                ctx.lineWidth = 10 + i / 4
+                setTimeout(() => {
+                    ctx.beginPath()
+                    ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height)
+                    ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height)
+                    ctx.stroke()
+                }, lerp(100, 1000, i / 100))
+            }
+        }
+
+        const doClear = () => {
+            let fillCount = 0
+
+            const gridWidth = Math.round(canvas.width / gridSize)
+            const gridHeight = Math.round(canvas.height / gridSize)
+
+            for (let y = 0; y < gridHeight; y++) {
+                for (let x = 0; x < gridWidth; x++) {
+                    let meme = ilerp(0, gridHeight, y)
+
+                    setTimeout(() => {
+                        ctx.fillStyle = "black"
+                        ctx.fillRect(x * gridSize - 1, y * gridSize - 1, gridSize + 2, gridSize + 2)
+
+                        fillCount++
+
+                        if (fillCount == gridHeight * gridWidth) {
+                            doFill()
+                        }
+                    }, lerp(100, 1000, Math.random() * ((y + 2) / gridHeight)))
+                }
+            }
+        }
+
+        const doFill = () => {
+            ctx.fillStyle = "black"
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+            let fillCount = 0
+
+            const gridWidth = Math.round(canvas.width / gridSize)
+            const gridHeight = Math.round(canvas.height / gridSize)
+
+            for (let y = 0; y < gridHeight; y++) {
+                for (let x = 0; x < gridWidth; x++) {
+                    let meme = ilerp(0, gridHeight, y)
+
+                    setTimeout(() => {
+                        ctx.fillStyle = randomColor(lerp(60, 1, y / gridHeight))
+                        ctx.fillRect(x * gridSize, y * gridSize, gridSize, gridSize)
+
+                        fillCount++
+
+                        if (fillCount == gridHeight * gridWidth) {
+                            setTimeout(doClear, 500)
+                            setTimeout(doLines, 0)
+                        }
+                    }, lerp(100, 2500, Math.random() * ((y + 2) / gridHeight)))
+                }
+            }
+        }
+        doFill()
+    </script>
+</body>

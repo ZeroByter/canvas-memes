@@ -1,0 +1,110 @@
+<body>
+    <title>power</title>
+
+    <style>
+        #canvas {
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import vector2 from "./vector2.js"
+        import GridMap from "./grid-map.js"
+        import "./meme-template.js"
+
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        let mapGridSize = 10
+        let mapGridWidth = Math.ceil(canvas.width / mapGridSize)
+        let mapGridHeight = Math.ceil(canvas.height / mapGridSize)
+        let map = new GridMap(mapGridSize, mapGridWidth, mapGridHeight, 0)
+        let mapData = new GridMap(mapGridSize, mapGridWidth, mapGridHeight)
+
+        function calculateWirePolesData() {
+            let allPowerPolePositions = []
+
+            for (let y = 0; y < mapGridHeight; y++) {
+                for (let x = 0; x < mapGridWidth; x++) {
+                    let blockType = map.get(x, y)
+
+                    if (blockType == 1) allPowerPolePositions.push([x, y])
+                }
+            }
+
+            for (let i = 0; i < allPowerPolePositions.length; i++) {
+                let [x1, y1] = allPowerPolePositions[i]
+
+                let iData = mapData.get(x1, y1)
+
+                for (let o = 0; o < allPowerPolePositions.length; o++) {
+                    let [x2, y2] = allPowerPolePositions[i]
+
+                    if(i == o) continue
+
+                    let oData = mapData.get(x2, y2)
+
+                    if(vector2.distance(x1, y1, x2, y2) < 20){
+                        //connect the poles! :P
+                    }
+                }
+            }
+        }
+
+        canvas.addEventListener("mousedown", e => {
+            const x = Math.floor(e.pageX / mapGridSize)
+            const y = Math.floor(e.pageY / mapGridSize)
+
+            map.set(x, y, 1)
+
+            calculateWirePolesData()
+        })
+
+        function think(timeDelta) {
+
+        }
+
+        function render() {
+            ctx.fillStyle = "black"
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+            for (let y = 0; y < mapGridHeight; y++) {
+                for (let x = 0; x < mapGridWidth; x++) {
+                    let blockType = map.get(x, y)
+
+                    if (blockType == 0) {
+                        ctx.strokeStyle = "rgba(255,255,255,0.04)"
+                        ctx.beginPath()
+                        ctx.rect(x * mapGridSize, y * mapGridSize, mapGridSize, mapGridSize)
+                        ctx.stroke()
+                    } else if (blockType == 1) {
+                        ctx.fillStyle = "white"
+                        ctx.fillRect(x * mapGridSize, y * mapGridSize, mapGridSize, mapGridSize)
+                    }
+
+                }
+            }
+
+            ctx.fillStyle = "red"
+        }
+
+        function gameLoop() {
+            think(1)
+
+            render()
+
+            window.requestAnimationFrame(gameLoop)
+        }
+
+        window.requestAnimationFrame(gameLoop)
+    </script>
+</body>

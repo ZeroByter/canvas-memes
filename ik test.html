@@ -1,0 +1,36 @@
+<body>
+    <style>
+        body {
+            margin: 0px;
+        }
+    </style>
+
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import vector2 from "./vector2.js"
+
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        canvas.addEventListener("contextmenu", e => {
+            e.preventDefault()
+        })
+
+        //physics loop
+        setInterval(() => {
+
+        }, 10)
+
+        //rendering loop
+        setInterval(() => {
+            ctx.fillStyle = "black"
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+            
+        }, 5)
+    </script>
+</body>

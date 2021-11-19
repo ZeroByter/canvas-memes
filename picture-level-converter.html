@@ -1,0 +1,87 @@
+<body>
+    <textarea id="colors-index-input" rows="10">255 255 255 255
+0 0 0
+    </textarea>
+    <input type="file" id="input" />
+    <button onclick="copyButtonClick(this)" data-type="js">copy as js</button>
+    <button onclick="copyButtonClick(this)" data-type="json">copy as json</button>
+</body>
+
+<script>
+    let rawOutputData = null
+
+    const colorsIndexInput = document.getElementById("colors-index-input")
+
+    function getColorsIndexes() {
+        const colorsIndex = []
+        const lines = colorsIndexInput.value.split("\n")
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i]
+
+            const components = line.split(/ +/)
+            const r = components[0] || 0
+            const g = components[1] || 0
+            const b = components[2] || 0
+            const a = components[3] || 255
+
+            colorsIndex.push(`${r} ${g} ${b} ${a}`)
+        }
+
+        return colorsIndex
+    }
+
+    document.getElementById("input").addEventListener("change", function (e) {
+        const file = this.files[0]
+
+        var fr = new FileReader();
+        fr.onload = e => {
+            const base64 = fr.result
+            const image = new Image()
+            image.src = base64
+
+            image.onload = () => {
+                const canvas = document.createElement("canvas")
+                canvas.width = image.width
+                canvas.height = image.height
+                const ctx = canvas.getContext("2d")
+                ctx.drawImage(image, 0, 0, image.width, image.height)
+
+                const colorIndexes = getColorsIndexes()
+
+                let data = []
+
+                for (let y = 0; y < canvas.height; y++) {
+                    for (let x = 0; x < canvas.width; x++) {
+                        const pixelData = ctx.getImageData(x, y, 1, 1).data
+                        const pixelString = `${pixelData[0]} ${pixelData[1]} ${pixelData[2]} ${pixelData[3]}`
+                        let typeIndex = colorIndexes.indexOf(pixelString)
+
+                        data[x + y * canvas.width] = typeIndex
+                    }
+                }
+
+                rawOutputData = {
+                    width: image.width,
+                    height: image.height,
+                    tiles: data,
+                }
+            }
+        };
+        fr.readAsDataURL(file);
+    })
+
+    function copyButtonClick(e){
+        if(!rawOutputData) return
+
+        if(e.dataset.type == "js"){
+            navigator.clipboard.writeText(`{
+    width: ${rawOutputData.width},
+    height: ${rawOutputData.height},
+    tiles: [${rawOutputData.tiles}]
+}`)
+        }else if(e.dataset.type == "json"){
+            navigator.clipboard.writeText(JSON.stringify(rawOutputData))
+        }
+    }
+</script>

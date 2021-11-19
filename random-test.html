@@ -1,0 +1,44 @@
+<body>
+    <style>
+        body {
+            margin: 0px;
+        }
+    </style>
+
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+        import "./meme-template.js"
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        let size = 2
+
+        const random = (min, max) => {
+            return Math.floor(Math.random() * (max - min) + min)
+        }
+
+        const getNextRed = () => {
+            return random(50, 100)
+        }
+
+        let nextRed = getNextRed()
+
+        for (let i = 0; i < canvas.width / size; i++) {
+            ctx.fillStyle = Math.random() > 0.5 ? "red" : "black"
+            ctx.fillRect(i * size, 0, size, canvas.height / 2)
+
+            nextRed--
+            if (nextRed == 0) {
+                nextRed = getNextRed()
+                ctx.fillStyle = "red"
+            }else{
+                ctx.fillStyle = "black"
+            }
+            ctx.fillRect(i * size, canvas.height / 2, size, canvas.height / 2)
+        }
+    </script>
+</body>
