@@ -1,0 +1,133 @@
+<body>
+  <title>lotta explodey</title>
+
+  <style>
+    #canvas {
+      position: fixed;
+      top: 0px;
+      left: 0px;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+
+  <canvas id="canvas"></canvas>
+
+  <script type="module">
+    import vector2 from "./vector2.js";
+    import { ilerp, lerp } from "./math.js";
+    import "./meme-template.js";
+
+    const canvas = document.querySelector("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const deg2Rad = (Math.PI * 2) / 360;
+    const rad2Deg = 1 / deg2Rad;
+
+    const source = new vector2(canvas.width / 2, canvas.height / 2);
+    const target = new vector2();
+
+    const arms = [
+      {
+        location: new vector2(source.x, source.y),
+        rotation: -90 * deg2Rad,
+      },
+      {
+        location: new vector2(source.x, source.y - 100),
+        rotation: -90 * deg2Rad,
+      },
+      {
+        location: new vector2(source.x, source.y - 200),
+        rotation: -90 * deg2Rad,
+      },
+    ];
+
+    canvas.addEventListener("mousemove", (e) => {
+      target.x = e.pageX;
+      target.y = e.pageY;
+    });
+
+    canvas.addEventListener("mousedown", (e) => {});
+
+    function think(timeDelta) {
+      for (let i = 0; i < arms.length; i++) {
+        const arm = arms[i];
+        if (i == 0) {
+          const s = arms[1].location;
+          const direction = arm.location.minus(s).normalized();
+          arm.location = s.add(direction.multiply(100));
+          arm.rotation = (direction.toAngle() + 90) * -deg2Rad;
+        } else if (i === 1) {
+          const s = arms[2].location;
+          const direction = arm.location.minus(s).normalized();
+          arm.location = s.add(direction.multiply(100));
+          arm.rotation = (direction.toAngle() + 90) * -deg2Rad;
+        } else if (i === 2) {
+          const s = target;
+          const direction = arm.location.minus(target).normalized();
+          arm.location = s.add(direction.multiply(100));
+          arm.rotation = (direction.toAngle() + 90) * -deg2Rad;
+        }
+      }
+
+      for (let i = 0; i < arms.length; i++) {
+        const arm = arms[i];
+        if (i == 0) {
+          const s = source;
+          const direction = arm.location.minus(s).normalized();
+          arm.location = s.add(direction.multiply(100));
+          arm.rotation = (direction.toAngle() + 90) * -deg2Rad;
+        } else if (i === 1) {
+          const s = arms[0].location;
+          const direction = arm.location.minus(s).normalized();
+          arm.location = s.add(direction.multiply(100));
+          arm.rotation = (direction.toAngle() + 90) * -deg2Rad;
+        } else if (i === 2) {
+          const s = arms[1].location;
+          const direction = arm.location.minus(target).normalized();
+          arm.location = s.add(direction.multiply(100));
+          arm.rotation = (direction.toAngle() + 90) * -deg2Rad;
+        }
+      }
+    }
+
+    function render() {
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (const arm of arms) {
+        ctx.save();
+        ctx.translate(arm.location.x, arm.location.y);
+        ctx.rotate(arm.rotation);
+        ctx.fillStyle = `hsl(${Math.random() * 360}deg 100% 50%)`;
+        ctx.fillRect(0, -5, 100, 10);
+        ctx.restore();
+      }
+
+      ctx.fillStyle = "red";
+      ctx.beginPath();
+      ctx.arc(source.x, source.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      for (const arm of arms) {
+        ctx.fillStyle = "blue";
+        ctx.beginPath();
+        ctx.arc(arm.location.x, arm.location.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function gameLoop() {
+      think(1);
+
+      render();
+
+      window.requestAnimationFrame(gameLoop);
+    }
+
+    window.requestAnimationFrame(gameLoop);
+  </script>
+</body>

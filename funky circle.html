@@ -1,0 +1,59 @@
+<body>
+  <style>
+    canvas {
+      position: fixed;
+      left: 0px;
+      top: 0px;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+
+  <canvas></canvas>
+
+  <script type="module">
+    import vector2 from "/vector2.js";
+    import * as math from "/math.js";
+
+    const canvas = document.querySelector("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    function frame(time) {
+      time = time / 1000;
+
+      ctx.fillStyle = "green";
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const size = Math.min(canvas.width, canvas.height) - 50;
+
+      const offsetX = canvas.width / 2 - size / 2;
+      const offsetY = canvas.height / 2 - size / 2;
+
+      let b = 0;
+
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const distance = vector2.distance(x, y, size / 2, size / 2);
+
+          const a = math.ilerp(size / 2, size / 2 - 50, distance);
+          if (a > b) {
+            b = a;
+          }
+
+          ctx.fillStyle = `rgba(${(1 - y / size) * 255},0,${
+            Math.random() * 75
+          },${math.ilerp(size / 2, size / 2 - 50, distance)})`;
+          ctx.fillRect(x + offsetX, y + offsetY, 1, 1);
+        }
+      }
+
+      console.log(b);
+
+      // window.requestAnimationFrame(frame);
+    }
+    window.requestAnimationFrame(frame);
+  </script>
+</body>

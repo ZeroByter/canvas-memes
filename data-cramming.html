@@ -1,0 +1,70 @@
+<body>
+    <script>
+        let example = "3d"
+
+        if (example == "2d") {
+            let width = 10;
+            let height = 10;
+
+            let multiLevelData = []
+            let singleLevelData = []
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let obj = {
+                        x,
+                        y,
+                    }
+
+                    multiLevelData.push(obj)
+
+                    let singleLevelIndex = x + y * width
+                    singleLevelData[singleLevelIndex] = obj
+                }
+            }
+
+            for (let i = 0; i < singleLevelData.length; i++) {
+                let x = Math.floor(i % width);
+                let y = Math.floor(i / width);
+                let obj = singleLevelData[i]
+
+                console.log(x == obj.x, y == obj.y);
+            }
+        } else if (example == "3d") {
+            let width = 100;
+            let height = 10;
+            let depth = 10;
+
+            let data = []
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    for (let z = 0; z < depth; z++) {
+                        let index = z + x * height + y * height * width
+
+                        let obj = {
+                            x,
+                            y,
+                            z,
+                            value: index
+                        }
+
+                        data[index] = obj
+                    }
+                }
+            }
+
+            let index = 0
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    for (let z = 0; z < depth; z++) {
+                        let obj = data[index]
+
+                        console.log(index, obj.x == x, obj.y == y, obj.z == z, obj.value, obj.value == index)
+
+                        index++
+                    }
+                }
+            }
+        }
+    </script>
+</body>

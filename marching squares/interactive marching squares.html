@@ -1,0 +1,683 @@
+<body>
+  <title>2d marching cubeS</title>
+
+  <style>
+    #canvas {
+      position: fixed;
+      top: 0px;
+      left: 0px;
+      width: 100%;
+      height: 100%;
+    }
+
+    #controls {
+      position: fixed;
+      left: 0px;
+      top: 0px;
+    }
+  </style>
+
+  <canvas id="canvas"></canvas>
+
+  <div id="controls">
+    <button id="toggleLerp">toggle interpolation</button>
+    <button id="toggleFill">toggle fill</button>
+    <button id="resetNoiseCircle">reset circle w/ noise</button>
+    <button id="resetCircle">reset circle</button>
+    <button id="resetNoise">reset noise</button>
+  </div>
+
+  <script type="module">
+    import vector2 from "./vector2.js";
+    import { lerp, clamp01 } from "./math.js";
+    import noise from "./perlin.js";
+
+    noise.seed(Math.random());
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let doLerp = true;
+    let doFill = true;
+
+    let mouseSize = 10;
+    let mousePosition = new vector2();
+
+    let cubeSize = 10;
+    let isolevel = 0.5;
+
+    let isMousePressed = false;
+    let isMouseDown = false;
+    let isRightMouseDown = false;
+
+    canvas.addEventListener("mousemove", (e) => {
+      mousePosition.x = e.offsetX;
+      mousePosition.y = e.offsetY;
+    });
+
+    canvas.addEventListener("mousedown", (e) => {
+      if (e.button == 0) {
+        isMousePressed = true;
+        isMouseDown = true;
+      } else {
+        isRightMouseDown = true;
+      }
+    });
+    canvas.addEventListener("mouseup", (e) => {
+      isMousePressed = false;
+      isMouseDown = false;
+      isRightMouseDown = false;
+    });
+    canvas.addEventListener("wheel", (e) => {
+      mouseSize = Math.max(2, mouseSize + e.deltaY / -50);
+    });
+    canvas.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+    });
+
+    document.getElementById("toggleLerp").addEventListener("click", (e) => {
+      doLerp = !doLerp;
+    });
+    document.getElementById("toggleFill").addEventListener("click", (e) => {
+      doFill = !doFill;
+    });
+
+    document
+      .getElementById("resetNoiseCircle")
+      .addEventListener("click", (e) => {
+        noise.seed(Math.random());
+        cubes = [];
+
+        for (let y = 0; y < canvas.height / cubeSize; y++) {
+          for (let x = 0; x < canvas.width / cubeSize; x++) {
+            newCube(new vector2(x * cubeSize, y * cubeSize), 1);
+          }
+        }
+      });
+    document.getElementById("resetCircle").addEventListener("click", (e) => {
+      cubes = [];
+
+      for (let y = 0; y < canvas.height / cubeSize; y++) {
+        for (let x = 0; x < canvas.width / cubeSize; x++) {
+          newCube(new vector2(x * cubeSize, y * cubeSize), 2);
+        }
+      }
+    });
+    document.getElementById("resetNoise").addEventListener("click", (e) => {
+      noise.seed(Math.random());
+      cubes = [];
+
+      for (let y = 0; y < canvas.height / cubeSize; y++) {
+        for (let x = 0; x < canvas.width / cubeSize; x++) {
+          newCube(new vector2(x * cubeSize, y * cubeSize), 0);
+        }
+      }
+    });
+
+    let cubes = [];
+
+    function getCornerCircleValue(location, center, size) {
+      return 1 - clamp01(location.distance(center) / size);
+    }
+
+    function getCubeCircleValues(location, center, size) {
+      return [
+        getCornerCircleValue(new vector2(location.x, location.y), center, size),
+        getCornerCircleValue(
+          new vector2(location.x + cubeSize, location.y),
+          center,
+          size
+        ),
+        getCornerCircleValue(
+          new vector2(location.x, location.y + cubeSize),
+          center,
+          size
+        ),
+        getCornerCircleValue(
+          new vector2(location.x + cubeSize, location.y + cubeSize),
+          center,
+          size
+        ),
+      ];
+    }
+
+    function getCornerCircleNoiseValue(location, center, size) {
+      return (
+        1 -
+        clamp01(
+          location.distance(center) / size +
+            noise.perlin2(location.x / 100, location.y / 100) * 0.1
+        )
+      );
+    }
+
+    function getCubeCircleNoiseValues(location, center, size) {
+      return [
+        getCornerCircleNoiseValue(
+          new vector2(location.x, location.y),
+          center,
+          size
+        ),
+        getCornerCircleNoiseValue(
+          new vector2(location.x + cubeSize, location.y),
+          center,
+          size
+        ),
+        getCornerCircleNoiseValue(
+          new vector2(location.x, location.y + cubeSize),
+          center,
+          size
+        ),
+        getCornerCircleNoiseValue(
+          new vector2(location.x + cubeSize, location.y + cubeSize),
+          center,
+          size
+        ),
+      ];
+    }
+
+    function getCornerNoiseValue(location) {
+      return noise.perlin2(location.x / 200, location.y / 200) * 3;
+    }
+
+    function getCubeNoiseValues(location) {
+      return [
+        getCornerNoiseValue(new vector2(location.x, location.y)),
+        getCornerNoiseValue(new vector2(location.x + cubeSize, location.y)),
+        getCornerNoiseValue(new vector2(location.x, location.y + cubeSize)),
+        getCornerNoiseValue(
+          new vector2(location.x + cubeSize, location.y + cubeSize)
+        ),
+      ];
+    }
+
+    function getCubeIndex(values) {
+      let index = 0;
+
+      if (values[0] >= isolevel) index |= 1;
+      if (values[1] >= isolevel) index |= 2;
+      if (values[2] >= isolevel) index |= 4;
+      if (values[3] >= isolevel) index |= 8;
+
+      return index;
+    }
+
+    function newCube(location, mode) {
+      let values;
+      if (mode == 0) {
+        values = getCubeNoiseValues(location);
+      } else if (mode == 1) {
+        values = getCubeCircleNoiseValues(
+          location,
+          new vector2(canvas.width / 2, canvas.height / 2),
+          500
+        );
+      } else if (mode == 2) {
+        values = getCubeCircleValues(
+          location,
+          new vector2(canvas.width / 2, canvas.height / 2),
+          500
+        );
+      }
+      const index = getCubeIndex(values);
+
+      cubes.push({
+        location,
+        values,
+        index,
+      });
+    }
+
+    for (let y = 0; y < canvas.height / cubeSize; y++) {
+      for (let x = 0; x < canvas.width / cubeSize; x++) {
+        newCube(new vector2(x * cubeSize, y * cubeSize), 1);
+      }
+    }
+
+    function getPointAlongEdge(p1, p2, v1, v2) {
+      let mul;
+      if (doLerp) {
+        mul = (isolevel - v1) / (v2 - v1);
+      } else {
+        mul = 0.5;
+      }
+
+      return new vector2(lerp(p1.x, p2.x, mul), lerp(p1.y, p2.y, mul));
+    }
+
+    function think(timeDelta) {
+      let minX =
+        Math.floor((mousePosition.x - mouseSize / 2) / cubeSize) - cubeSize * 2;
+      let minY =
+        Math.floor((mousePosition.y - mouseSize / 2) / cubeSize) - cubeSize * 2;
+      let maxX =
+        Math.ceil((mousePosition.x + mouseSize / 2) / cubeSize) + cubeSize * 2;
+      let maxY =
+        Math.ceil((mousePosition.y + mouseSize / 2) / cubeSize) + cubeSize * 2;
+      let gridWidth = Math.ceil(canvas.width / cubeSize);
+
+      if (isMouseDown || isRightMouseDown) {
+        let offset = 0.6;
+        if (isRightMouseDown) offset = offset * -1;
+
+        for (let y = minY; y < maxY; y++) {
+          for (let x = minX; x < maxX; x++) {
+            let index = x + y * gridWidth;
+
+            if (index < 0 || index > cubes.length - 1) continue;
+
+            const cube = cubes[index];
+
+            let newValues = getCubeCircleValues(
+              cube.location,
+              mousePosition,
+              mouseSize
+            );
+
+            cube.values[0] += newValues[0] * offset;
+            cube.values[1] += newValues[1] * offset;
+            cube.values[2] += newValues[2] * offset;
+            cube.values[3] += newValues[3] * offset;
+
+            cube.values[0] = clamp01(cube.values[0]);
+            cube.values[1] = clamp01(cube.values[1]);
+            cube.values[2] = clamp01(cube.values[2]);
+            cube.values[3] = clamp01(cube.values[3]);
+
+            cube.index = getCubeIndex(cube.values);
+          }
+        }
+      }
+
+      isMousePressed = false;
+    }
+
+    function render() {
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = `red`;
+      ctx.strokeStyle = "red";
+
+      const endPathFunction = () => {
+        if (doFill) {
+          ctx.fill();
+        } else {
+          ctx.stroke();
+        }
+      };
+
+      for (const cube of cubes) {
+        const dots = [
+          new vector2(cube.location.x, cube.location.y),
+          new vector2(cube.location.x + cubeSize, cube.location.y),
+          new vector2(cube.location.x, cube.location.y + cubeSize),
+          new vector2(cube.location.x + cubeSize, cube.location.y + cubeSize),
+        ];
+
+        if (cube.index == 15) {
+          if (doFill)
+            ctx.fillRect(cube.location.x, cube.location.y, cubeSize, cubeSize);
+        } else if (cube.index == 1) {
+          let c1 = dots[0];
+          let p1 = getPointAlongEdge(
+            dots[0],
+            dots[1],
+            cube.values[0],
+            cube.values[1]
+          );
+          let p2 = getPointAlongEdge(
+            dots[0],
+            dots[2],
+            cube.values[0],
+            cube.values[2]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          endPathFunction();
+        } else if (cube.index == 2) {
+          let c1 = dots[1];
+          let p1 = getPointAlongEdge(
+            dots[0],
+            dots[1],
+            cube.values[0],
+            cube.values[1]
+          );
+          let p2 = getPointAlongEdge(
+            dots[1],
+            dots[3],
+            cube.values[1],
+            cube.values[3]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          endPathFunction();
+        } else if (cube.index == 3) {
+          let c1 = dots[0];
+          let c2 = dots[1];
+          let p1 = getPointAlongEdge(
+            dots[0],
+            dots[2],
+            cube.values[0],
+            cube.values[2]
+          );
+          let p2 = getPointAlongEdge(
+            dots[1],
+            dots[3],
+            cube.values[1],
+            cube.values[3]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          if (doFill) ctx.lineTo(c2.x, c2.y);
+          endPathFunction();
+        } else if (cube.index == 4) {
+          let c1 = dots[2];
+          let p1 = getPointAlongEdge(
+            dots[0],
+            dots[2],
+            cube.values[0],
+            cube.values[2]
+          );
+          let p2 = getPointAlongEdge(
+            dots[2],
+            dots[3],
+            cube.values[2],
+            cube.values[3]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          endPathFunction();
+        } else if (cube.index == 5) {
+          let c1 = dots[0];
+          let c2 = dots[2];
+          let p1 = getPointAlongEdge(
+            dots[0],
+            dots[1],
+            cube.values[0],
+            cube.values[1]
+          );
+          let p2 = getPointAlongEdge(
+            dots[2],
+            dots[3],
+            cube.values[2],
+            cube.values[3]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          if (doFill) ctx.lineTo(c2.x, c2.y);
+          endPathFunction();
+        } else if (cube.index == 6) {
+          let c1 = dots[1];
+          let c2 = dots[2];
+          let p1 = getPointAlongEdge(
+            dots[0],
+            dots[1],
+            cube.values[0],
+            cube.values[1]
+          );
+          let p2 = getPointAlongEdge(
+            dots[1],
+            dots[3],
+            cube.values[1],
+            cube.values[3]
+          );
+          let p3 = getPointAlongEdge(
+            dots[0],
+            dots[2],
+            cube.values[0],
+            cube.values[2]
+          );
+          let p4 = getPointAlongEdge(
+            dots[2],
+            dots[3],
+            cube.values[2],
+            cube.values[3]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          endPathFunction();
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c2.x, c2.y);
+          ctx.lineTo(p3.x, p3.y);
+          ctx.lineTo(p4.x, p4.y);
+          endPathFunction();
+        } else if (cube.index == 7) {
+          let c1 = dots[0];
+          let c2 = dots[1];
+          let c3 = dots[2];
+          let p1 = getPointAlongEdge(
+            dots[2],
+            dots[3],
+            cube.values[2],
+            cube.values[3]
+          );
+          let p2 = getPointAlongEdge(
+            dots[1],
+            dots[3],
+            cube.values[1],
+            cube.values[3]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          if (doFill) ctx.lineTo(c3.x, c3.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          if (doFill) ctx.lineTo(c2.x, c2.y);
+          endPathFunction();
+        } else if (cube.index == 8) {
+          let c1 = dots[3];
+          let p1 = getPointAlongEdge(
+            dots[1],
+            dots[3],
+            cube.values[1],
+            cube.values[3]
+          );
+          let p2 = getPointAlongEdge(
+            dots[2],
+            dots[3],
+            cube.values[2],
+            cube.values[3]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          endPathFunction();
+        } else if (cube.index == 9) {
+          let c1 = dots[0];
+          let c2 = dots[3];
+          let p1 = getPointAlongEdge(
+            dots[0],
+            dots[1],
+            cube.values[0],
+            cube.values[1]
+          );
+          let p2 = getPointAlongEdge(
+            dots[0],
+            dots[2],
+            cube.values[0],
+            cube.values[2]
+          );
+          let p3 = getPointAlongEdge(
+            dots[1],
+            dots[3],
+            cube.values[1],
+            cube.values[3]
+          );
+          let p4 = getPointAlongEdge(
+            dots[2],
+            dots[3],
+            cube.values[2],
+            cube.values[3]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          endPathFunction();
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c2.x, c2.y);
+          ctx.lineTo(p3.x, p3.y);
+          ctx.lineTo(p4.x, p4.y);
+          endPathFunction();
+        } else if (cube.index == 10) {
+          let c1 = dots[1];
+          let c2 = dots[3];
+          let p1 = getPointAlongEdge(
+            dots[0],
+            dots[1],
+            cube.values[0],
+            cube.values[1]
+          );
+          let p2 = getPointAlongEdge(
+            dots[2],
+            dots[3],
+            cube.values[2],
+            cube.values[3]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          if (doFill) ctx.lineTo(c2.x, c2.y);
+          endPathFunction();
+        } else if (cube.index == 11) {
+          let c1 = dots[0];
+          let c2 = dots[1];
+          let c3 = dots[3];
+          let p1 = getPointAlongEdge(
+            dots[0],
+            dots[2],
+            cube.values[0],
+            cube.values[2]
+          );
+          let p2 = getPointAlongEdge(
+            dots[2],
+            dots[3],
+            cube.values[2],
+            cube.values[3]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          if (doFill) ctx.lineTo(c3.x, c3.y);
+          if (doFill) ctx.lineTo(c2.x, c2.y);
+          endPathFunction();
+        } else if (cube.index == 12) {
+          let c1 = dots[2];
+          let c2 = dots[3];
+          let p1 = getPointAlongEdge(
+            dots[0],
+            dots[2],
+            cube.values[0],
+            cube.values[2]
+          );
+          let p2 = getPointAlongEdge(
+            dots[1],
+            dots[3],
+            cube.values[1],
+            cube.values[3]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          if (doFill) ctx.lineTo(c2.x, c2.y);
+          endPathFunction();
+        } else if (cube.index == 13) {
+          let c1 = dots[0];
+          let c2 = dots[2];
+          let c3 = dots[3];
+          let p1 = getPointAlongEdge(
+            dots[0],
+            dots[1],
+            cube.values[0],
+            cube.values[1]
+          );
+          let p2 = getPointAlongEdge(
+            dots[1],
+            dots[3],
+            cube.values[1],
+            cube.values[3]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          if (doFill) ctx.lineTo(c3.x, c3.y);
+          if (doFill) ctx.lineTo(c2.x, c2.y);
+          endPathFunction();
+        } else if (cube.index == 14) {
+          let c1 = dots[1];
+          let c2 = dots[2];
+          let c3 = dots[3];
+          let p1 = getPointAlongEdge(
+            dots[0],
+            dots[1],
+            cube.values[0],
+            cube.values[1]
+          );
+          let p2 = getPointAlongEdge(
+            dots[0],
+            dots[2],
+            cube.values[0],
+            cube.values[2]
+          );
+
+          ctx.beginPath();
+          if (doFill) ctx.moveTo(c1.x, c1.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          if (doFill) ctx.lineTo(c2.x, c2.y);
+          if (doFill) ctx.lineTo(c3.x, c3.y);
+          endPathFunction();
+        }
+      }
+
+      ctx.strokeStyle = "white";
+      ctx.beginPath();
+      ctx.arc(mousePosition.x, mousePosition.y, mouseSize, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    function gameLoop() {
+      think(1);
+
+      render();
+
+      window.requestAnimationFrame(gameLoop);
+    }
+
+    window.requestAnimationFrame(gameLoop);
+  </script>
+</body>

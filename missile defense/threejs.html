@@ -1,0 +1,64 @@
+<body>
+  <title>threejs</title>
+
+  <style>
+    canvas {
+      position: fixed;
+      top: 0px;
+      left: 0px;
+    }
+  </style>
+
+  <script type="module">
+    import * as THREE from "/missile defense/three.module.min.js";
+
+    import missileGenerator from "/missile defense/meshes/missile.js";
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // camera.position.y = 3;
+    camera.position.z = 5;
+
+    const light = new THREE.DirectionalLight(0xffffff, 0.5);
+    scene.add(light);
+    light.position.x = -1;
+    light.position.z = 1;
+
+    scene.add(missileGenerator(4, 0.3, 1, 4, 1, 0.5, 0.2));
+
+    function think(time) {
+      time /= 1000;
+
+      camera.lookAt(new THREE.Vector3());
+      camera.position.x = Math.sin(time) * 5;
+      camera.position.z = Math.cos(time) * 5;
+
+      light.position.x = camera.position.x;
+      light.position.z = camera.position.z;
+    }
+
+    function render() {
+      renderer.render(scene, camera);
+    }
+
+    function frame(time) {
+      think(time);
+
+      render();
+
+      window.requestAnimationFrame(frame);
+    }
+
+    window.requestAnimationFrame(frame);
+  </script>
+</body>

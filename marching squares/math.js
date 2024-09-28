@@ -1,24 +1,3 @@
-import vector2 from "./vector2.js"
-
-export const radToDeg = rad => {
-    return rad * Math.PI / 180
-}
-
-export const vectorFromVectorAndDirection = (source, angle, length) => {
-    return new vector2(source.x + Math.sin(angle) * length, source.y + Math.cos(angle) * length)
-}
-
-export const xyIntoInt = (x, y) => {
-    return (y << 16) | x
-}
-
-export const intToVector = int => {
-    const x = ((int >> (16 * (0))) & 0xFFFF)
-    const y = ((int >> (16 * (1))) & 0xFFFF)
-
-    return new vector2(x, y)
-}
-
 export const clamp = (min, max, value) => {
     if(value < min) return min
     if(value > max) return max
@@ -30,7 +9,7 @@ export const clamp01 = value => {
 }
 
 export const lerp = (a, b, t) => {
-    return a + (b - a) * clamp01(t)
+    return a + (b - a) * t
 }
 
 export const ilerp = (a, b, t) => {

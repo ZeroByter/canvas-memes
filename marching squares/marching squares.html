@@ -1,0 +1,289 @@
+<body>
+    <title>2d marching cubeS</title>
+
+    <style>
+        #canvas {
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+        }
+
+        input {
+            position: fixed;
+            left: 0px;
+            top: 0px;
+        }
+    </style>
+
+    <canvas id="canvas"></canvas>
+
+    <input type="range" id="isoLevelSlider" min="0" max="1000" />
+
+    <script type="module">
+        import vector2 from "./vector2.js"
+        import { lerp } from "./math.js"
+
+        const canvas = document.getElementById("canvas")
+        const ctx = canvas.getContext("2d")
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        let isoLevelSlider = document.querySelector("#isoLevelSlider")
+        let isoLevelSliderActive = false
+        isoLevelSlider.addEventListener("change", e => {
+            isolevel = parseInt(isoLevelSlider.value)
+            for (const cube of cubes) {
+                cube.index = getCubeIndex(getCubeValues(cube.location))
+            }
+        })
+        isoLevelSlider.addEventListener("mousedown", () => {
+            isoLevelSliderActive = true
+        })
+        isoLevelSlider.addEventListener("mouseup", () => {
+            isoLevelSliderActive = false
+        })
+        isoLevelSlider.addEventListener("mousemove", () => {
+            if (isoLevelSliderActive) {
+                isolevel = parseInt(isoLevelSlider.value)
+                for (const cube of cubes) {
+                    cube.index = getCubeIndex(getCubeValues(cube.location))
+                }
+            }
+        })
+
+        let mousePosition = new vector2()
+
+        let cubeSize = 25
+        let isolevel = 50
+
+        let isMousePressed = false
+        let isMouseDown = false
+
+        canvas.addEventListener("mousemove", e => {
+            mousePosition.x = e.offsetX
+            mousePosition.y = e.offsetY
+        })
+
+        canvas.addEventListener("mousedown", e => {
+            isMousePressed = true
+            isMouseDown = true
+        })
+        canvas.addEventListener("mouseup", e => {
+            isMousePressed = false
+            isMouseDown = false
+        })
+
+        let cubes = []
+
+        function getCornerValue(location) {
+            return location.distance(new vector2(canvas.width / 2, canvas.height / 2))
+        }
+
+        function getCubeValues(location) {
+            return [
+                getCornerValue(new vector2(location.x, location.y)),
+                getCornerValue(new vector2(location.x + cubeSize, location.y)),
+                getCornerValue(new vector2(location.x, location.y + cubeSize)),
+                getCornerValue(new vector2(location.x + cubeSize, location.y + cubeSize)),
+            ]
+        }
+
+        function getCubeIndex(values) {
+            let index = 0
+
+            if (values[0] < isolevel) index |= 1
+            if (values[1] < isolevel) index |= 2
+            if (values[2] < isolevel) index |= 4
+            if (values[3] < isolevel) index |= 8
+
+            return index
+        }
+
+        function newCube(location) {
+            const values = getCubeValues(location)
+            const index = getCubeIndex(values)
+
+            cubes.push({
+                location,
+                values,
+                index
+            })
+        }
+
+        for (let y = 0; y < canvas.height / cubeSize; y++) {
+            for (let x = 0; x < canvas.width / cubeSize; x++) {
+                newCube(new vector2(x * cubeSize, y * cubeSize))
+            }
+        }
+
+        function getPointAlongEdge(p1, p2, v1, v2) {
+            let mul = (isolevel - v1) / (v2 - v1)
+
+            return new vector2(
+                lerp(p1.x, p2.x, mul),
+                lerp(p1.y, p2.y, mul),
+            )
+        }
+
+        function think(timeDelta) {
+
+
+            isMousePressed = false
+        }
+
+        function render() {
+            ctx.fillStyle = "black"
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+            ctx.strokeStyle = "red"
+
+            for (const cube of cubes) {
+                const dots = [
+                    new vector2(cube.location.x, cube.location.y),
+                    new vector2(cube.location.x + cubeSize, cube.location.y),
+                    new vector2(cube.location.x, cube.location.y + cubeSize),
+                    new vector2(cube.location.x + cubeSize, cube.location.y + cubeSize),
+                ]
+
+                if (cube.index == 1) {
+                    let p1 = getPointAlongEdge(dots[0], dots[1], cube.values[0], cube.values[1])
+                    let p2 = getPointAlongEdge(dots[0], dots[2], cube.values[0], cube.values[2])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                } else if (cube.index == 2) {
+                    let p1 = getPointAlongEdge(dots[0], dots[1], cube.values[0], cube.values[1])
+                    let p2 = getPointAlongEdge(dots[1], dots[3], cube.values[1], cube.values[3])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                } else if (cube.index == 3) {
+                    let p1 = getPointAlongEdge(dots[0], dots[2], cube.values[0], cube.values[2])
+                    let p2 = getPointAlongEdge(dots[1], dots[3], cube.values[1], cube.values[3])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                } else if (cube.index == 4) {
+                    let p1 = getPointAlongEdge(dots[0], dots[2], cube.values[0], cube.values[2])
+                    let p2 = getPointAlongEdge(dots[2], dots[3], cube.values[2], cube.values[3])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                } else if (cube.index == 5) {
+                    let p1 = getPointAlongEdge(dots[0], dots[1], cube.values[0], cube.values[1])
+                    let p2 = getPointAlongEdge(dots[2], dots[3], cube.values[2], cube.values[3])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                } else if (cube.index == 6) {
+                    let p1 = getPointAlongEdge(dots[0], dots[1], cube.values[0], cube.values[1])
+                    let p2 = getPointAlongEdge(dots[1], dots[3], cube.values[1], cube.values[3])
+                    let p3 = getPointAlongEdge(dots[0], dots[2], cube.values[0], cube.values[2])
+                    let p4 = getPointAlongEdge(dots[2], dots[3], cube.values[2], cube.values[3])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                    ctx.beginPath()
+                    ctx.moveTo(p3.x, p3.y)
+                    ctx.lineTo(p4.x, p4.y)
+                    ctx.stroke()
+                } else if (cube.index == 7) {
+                    let p1 = getPointAlongEdge(dots[2], dots[3], cube.values[2], cube.values[3])
+                    let p2 = getPointAlongEdge(dots[1], dots[3], cube.values[1], cube.values[3])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                } else if (cube.index == 8) {
+                    let p1 = getPointAlongEdge(dots[1], dots[3], cube.values[1], cube.values[3])
+                    let p2 = getPointAlongEdge(dots[2], dots[3], cube.values[2], cube.values[3])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                } else if (cube.index == 9) {
+                    let p1 = getPointAlongEdge(dots[0], dots[1], cube.values[0], cube.values[1])
+                    let p2 = getPointAlongEdge(dots[0], dots[2], cube.values[0], cube.values[2])
+                    let p3 = getPointAlongEdge(dots[1], dots[3], cube.values[1], cube.values[3])
+                    let p4 = getPointAlongEdge(dots[2], dots[3], cube.values[2], cube.values[3])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                    ctx.beginPath()
+                    ctx.moveTo(p3.x, p3.y)
+                    ctx.lineTo(p4.x, p4.y)
+                    ctx.stroke()
+                } else if (cube.index == 10) {
+                    let p1 = getPointAlongEdge(dots[0], dots[1], cube.values[0], cube.values[1])
+                    let p2 = getPointAlongEdge(dots[2], dots[3], cube.values[2], cube.values[3])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                } else if (cube.index == 11) {
+                    let p1 = getPointAlongEdge(dots[0], dots[2], cube.values[0], cube.values[2])
+                    let p2 = getPointAlongEdge(dots[2], dots[3], cube.values[2], cube.values[3])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                } else if (cube.index == 12) {
+                    let p1 = getPointAlongEdge(dots[0], dots[2], cube.values[0], cube.values[2])
+                    let p2 = getPointAlongEdge(dots[1], dots[3], cube.values[1], cube.values[3])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                } else if (cube.index == 13) {
+                    let p1 = getPointAlongEdge(dots[0], dots[1], cube.values[0], cube.values[1])
+                    let p2 = getPointAlongEdge(dots[1], dots[3], cube.values[1], cube.values[3])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                } else if (cube.index == 14) {
+                    let p1 = getPointAlongEdge(dots[0], dots[1], cube.values[0], cube.values[1])
+                    let p2 = getPointAlongEdge(dots[0], dots[2], cube.values[0], cube.values[2])
+
+                    ctx.beginPath()
+                    ctx.moveTo(p1.x, p1.y)
+                    ctx.lineTo(p2.x, p2.y)
+                    ctx.stroke()
+                }
+            }
+        }
+
+        function gameLoop() {
+            think(1)
+
+            render()
+
+            window.requestAnimationFrame(gameLoop)
+        }
+
+        window.requestAnimationFrame(gameLoop)
+    </script>
+</body>

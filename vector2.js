@@ -1,9 +1,9 @@
 export default class vector2 {
     constructor(x, y) {
-        if(x != null && y == null){
+        if (x != null && y == null) {
             this.y = x.y
             this.x = x.x
-        }else{
+        } else {
             this.x = x || 0
             this.y = y || 0
         }
@@ -58,7 +58,10 @@ export default class vector2 {
     copy = () => {
         return new vector2(this.x, this.y)
     }
-	equals = otherVector => {
-		return this.x == otherVector.x && this.y == otherVector.y
-	}
+    equals = otherVector => {
+        return this.x == otherVector.x && this.y == otherVector.y
+    }
+    toString = () => {
+        return `vector2(${this.x}, ${this.y})`
+    }
 }

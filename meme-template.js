@@ -8,12 +8,12 @@ function repeatString(str, times) {
     return result
 }
 
-function getUrlPrefix(){
+function getUrlPrefix() {
     const pathNameParts = window.location.pathname.split("/").length - 3
 
-    if(pathNameParts <= 0){
+    if (pathNameParts <= 0) {
         return "./"
-    }else{
+    } else {
         return repeatString("../", pathNameParts)
     }
 }

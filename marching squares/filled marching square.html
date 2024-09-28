@@ -1,0 +1,333 @@
+<body>
+  <title>2d marching cube</title>
+
+  <style>
+    #canvas {
+      position: fixed;
+      top: 0px;
+      left: 0px;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+
+  <canvas id="canvas"></canvas>
+
+  <script type="module">
+    import vector2 from "./vector2.js";
+    import { lerp } from "./math.js";
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let mousePosition = new vector2();
+
+    let isMousePressed = false;
+    let isMouseDown = false;
+
+    canvas.addEventListener("mousemove", (e) => {
+      mousePosition.x = e.offsetX;
+      mousePosition.y = e.offsetY;
+    });
+
+    canvas.addEventListener("mousedown", (e) => {
+      isMousePressed = true;
+      isMouseDown = true;
+    });
+    canvas.addEventListener("mouseup", (e) => {
+      isMousePressed = false;
+      isMouseDown = false;
+    });
+
+    let dots = [];
+
+    let index = 0;
+
+    function newDot(location) {
+      dots.push({
+        location,
+        mouse: 0,
+        active: false,
+      });
+    }
+
+    newDot(new vector2(canvas.width / 2 - 50, canvas.height / 2 - 50));
+    newDot(new vector2(canvas.width / 2 + 50, canvas.height / 2 - 50));
+    newDot(new vector2(canvas.width / 2 - 50, canvas.height / 2 + 50));
+    newDot(new vector2(canvas.width / 2 + 50, canvas.height / 2 + 50));
+
+    function calculateIndex() {
+      let index = 0;
+
+      if (dots[0].active) index |= 1;
+      if (dots[1].active) index |= 2;
+      if (dots[2].active) index |= 4;
+      if (dots[3].active) index |= 8;
+
+      return index;
+    }
+
+    function getPointAlongEdge(isolevel, p1, p2, v1, v2) {
+      return new vector2(lerp(p1.x, p2.x, 0.5), lerp(p1.y, p2.y, 0.5));
+    }
+
+    function think(timeDelta) {
+      for (const dot of dots) {
+        dot.mouse = 0;
+        if (mousePosition.distance(dot.location) < 10) {
+          dot.mouse++;
+
+          if (isMouseDown) {
+            dot.mouse++;
+          }
+
+          if (isMousePressed) {
+            dot.active = !dot.active;
+
+            index = calculateIndex();
+            console.log(index);
+          }
+        }
+      }
+
+      isMousePressed = false;
+    }
+
+    function render() {
+      ctx.font = "14px Consolas";
+
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      let dotIndex = -1;
+      for (const dot of dots) {
+        dotIndex++;
+
+        if (dot.active) {
+          if (dot.mouse == 0) {
+            ctx.fillStyle = "green";
+          } else if (dot.mouse == 1) {
+            ctx.fillStyle = "darkgreen";
+          } else if (dot.mouse == 2) {
+            ctx.fillStyle = "yellow";
+          }
+        } else {
+          if (dot.mouse == 0) {
+            ctx.fillStyle = "red";
+          } else if (dot.mouse == 1) {
+            ctx.fillStyle = "orange";
+          } else if (dot.mouse == 2) {
+            ctx.fillStyle = "yellow";
+          }
+        }
+
+        ctx.beginPath();
+        ctx.arc(dot.location.x, dot.location.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "white";
+        ctx.fillText(`${dotIndex}`, dot.location.x, dot.location.y);
+      }
+
+      ctx.fillStyle = "red";
+
+      if (index == 1) {
+        let c1 = dots[0].location;
+        let p1 = getPointAlongEdge(0, dots[0].location, dots[1].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[0].location, dots[2].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.fill();
+      } else if (index == 2) {
+        let c1 = dots[1].location;
+        let p1 = getPointAlongEdge(0, dots[0].location, dots[1].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[1].location, dots[3].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.fill();
+      } else if (index == 3) {
+        let c1 = dots[0].location;
+        let c2 = dots[1].location;
+        let p1 = getPointAlongEdge(0, dots[0].location, dots[2].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[1].location, dots[3].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(c2.x, c2.y);
+        ctx.fill();
+      } else if (index == 4) {
+        let c1 = dots[2].location;
+        let p1 = getPointAlongEdge(0, dots[0].location, dots[2].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[2].location, dots[3].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.fill();
+      } else if (index == 5) {
+        let c1 = dots[0].location;
+        let c2 = dots[2].location;
+        let p1 = getPointAlongEdge(0, dots[0].location, dots[1].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[2].location, dots[3].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(c2.x, c2.y);
+        ctx.fill();
+      } else if (index == 6) {
+        let c1 = dots[1].location;
+        let c2 = dots[2].location;
+        let p1 = getPointAlongEdge(0, dots[0].location, dots[1].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[1].location, dots[3].location, 0, 0);
+        let p3 = getPointAlongEdge(0, dots[0].location, dots[2].location, 0, 0);
+        let p4 = getPointAlongEdge(0, dots[2].location, dots[3].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(c2.x, c2.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.lineTo(p4.x, p4.y);
+        ctx.fill();
+      } else if (index == 7) {
+        let c1 = dots[0].location;
+        let c2 = dots[1].location;
+        let c3 = dots[2].location;
+        let p1 = getPointAlongEdge(0, dots[2].location, dots[3].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[1].location, dots[3].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(c3.x, c3.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(c2.x, c2.y);
+        ctx.fill();
+      } else if (index == 8) {
+        let c1 = dots[3].location;
+        let p1 = getPointAlongEdge(0, dots[1].location, dots[3].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[2].location, dots[3].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.fill();
+      } else if (index == 9) {
+        let c1 = dots[0].location;
+        let c2 = dots[3].location;
+        let p1 = getPointAlongEdge(0, dots[0].location, dots[1].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[0].location, dots[2].location, 0, 0);
+        let p3 = getPointAlongEdge(0, dots[1].location, dots[3].location, 0, 0);
+        let p4 = getPointAlongEdge(0, dots[2].location, dots[3].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(c2.x, c2.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.lineTo(p4.x, p4.y);
+        ctx.fill();
+      } else if (index == 10) {
+        let c1 = dots[1].location;
+        let c2 = dots[3].location;
+        let p1 = getPointAlongEdge(0, dots[0].location, dots[1].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[2].location, dots[3].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(c2.x, c2.y);
+        ctx.fill();
+      } else if (index == 11) {
+        let c1 = dots[0].location;
+        let c2 = dots[1].location;
+        let c3 = dots[3].location;
+        let p1 = getPointAlongEdge(0, dots[0].location, dots[2].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[2].location, dots[3].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(c3.x, c3.y);
+        ctx.lineTo(c2.x, c2.y);
+        ctx.fill();
+      } else if (index == 12) {
+        let c1 = dots[2].location;
+        let c2 = dots[3].location;
+        let p1 = getPointAlongEdge(0, dots[0].location, dots[2].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[1].location, dots[3].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(c2.x, c2.y);
+        ctx.fill();
+      } else if (index == 13) {
+        let c1 = dots[0].location;
+        let c2 = dots[2].location;
+        let c3 = dots[3].location;
+        let p1 = getPointAlongEdge(0, dots[0].location, dots[1].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[1].location, dots[3].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(c3.x, c3.y);
+        ctx.lineTo(c2.x, c2.y);
+        ctx.fill();
+      } else if (index == 14) {
+        let c1 = dots[1].location;
+        let c2 = dots[2].location;
+        let c3 = dots[3].location;
+        let p1 = getPointAlongEdge(0, dots[0].location, dots[1].location, 0, 0);
+        let p2 = getPointAlongEdge(0, dots[0].location, dots[2].location, 0, 0);
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(c2.x, c2.y);
+        ctx.lineTo(c3.x, c3.y);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "white";
+      ctx.fillText(`index: ${index}`, canvas.width / 2, canvas.height / 2);
+    }
+
+    function gameLoop() {
+      think(1);
+
+      render();
+
+      window.requestAnimationFrame(gameLoop);
+    }
+
+    window.requestAnimationFrame(gameLoop);
+  </script>
+</body>
